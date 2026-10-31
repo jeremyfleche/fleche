@@ -1,7 +1,6 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <cstdint>
 #include <stdint.h>
 
 typedef uint64_t Bitboard;
