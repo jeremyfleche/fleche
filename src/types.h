@@ -10,11 +10,12 @@ enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 enum { WHITE_OO = 1, WHITE_OOO = 2, BLACK_OO = 4, BLACK_OOO = 8 };
 
 #define EMPTY 0xFF
+#define make_piece(color, type) ((color << 3) | (type))
 
 typedef struct {
 	Bitboard pieces[6];
 	Bitboard colors[2];
-	uint8_t board[64];
+	uint8_t board[64];		// 0xFF = empty, otherwise piece code (color << 3 | type)
 
 	uint8_t side_to_move;
 	uint8_t castling;		// WHITE_OO, WHITE_OOO, BLACK_OO, BLACK_OOO
