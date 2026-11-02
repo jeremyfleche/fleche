@@ -3,30 +3,30 @@
 #include "types.h"
 #include <cassert>
 
-constexpr Bitboard sq_bb(int sq) { return Bitboard(1) << sq; }
+constexpr Bitboard sq_bb(int square) { return Bitboard(1) << square; }
 
-constexpr int piece_color(int pc) { return pc >> 3; }
-constexpr int piece_type(int pc) { return pc & 7; }
+constexpr int piece_color(int piece) { return piece >> 3; }
+constexpr int piece_type(int piece) { return piece & 7; }
 
-inline void put_piece(Position* p, int pc, int sq) {
-	assert(p->board[sq] == EMPTY);
-	p->pieces[piece_type(pc)] |= sq_bb(sq);
-	p->colors[piece_color(pc)] |= sq_bb(sq);
-	p->board[sq] = pc;
+inline void put_piece(Position* p, int piece, int square) {
+	assert(p->board[square] == EMPTY);
+	p->pieces[piece_type(piece)] |= sq_bb(square);
+	p->colors[piece_color(piece)] |= sq_bb(square);
+	p->board[square] = piece;
 }
 
-inline void remove_piece(Position* p, int pc, int sq) {
-	assert(p->board[sq] == pc);
-	p->pieces[piece_type(pc)] ^= sq_bb(sq);
-	p->colors[piece_color(pc)] ^= sq_bb(sq);
-	p->board[sq] = EMPTY;
+inline void remove_piece(Position* p, int piece, int square) {
+	assert(p->board[square] == piece);
+	p->pieces[piece_type(piece)] ^= sq_bb(square);
+	p->colors[piece_color(piece)] ^= sq_bb(square);
+	p->board[square] = EMPTY;
 }
 
-inline void move_piece(Position* p, int pc, int from, int to) {
-	assert(p->board[from] == pc && p->board[to] == EMPTY);
+inline void move_piece(Position* p, int piece, int from, int to) {
+	assert(p->board[from] == piece && p->board[to] == EMPTY);
 	Bitboard fromto = sq_bb(from) | sq_bb(to);
-	p->pieces[piece_type(pc)] ^= fromto;
-	p->colors[piece_color(pc)] ^= fromto;
+	p->pieces[piece_type(piece)] ^= fromto;
+	p->colors[piece_color(piece)] ^= fromto;
 	p->board[from] = EMPTY;
-	p->board[to] = pc;
+	p->board[to] = piece;
 }

@@ -21,5 +21,5 @@ struct Position {
 	uint8_t ep_square;		// en passant squares
 	uint8_t halfmove;		// 50 moves rule
 	uint16_t fullmove;		// move number
-	
+	uint64_t hash;
 };
