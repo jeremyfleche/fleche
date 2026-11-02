@@ -1,22 +1,22 @@
-EXE    = fleche
-SRC    = $(wildcard src/*.c)
-HDR    = $(wildcard src/*.h)
+EXE      = fleche
+SRC      = $(wildcard src/*.cpp)
+HDR      = $(wildcard src/*.h)
 
-CFLAGS = -std=c17 -Wall -Wextra -Wpedantic
-OPT    = -O3 -march=native -flto -DNDEBUG
-DBG    = -O0 -g3 -fsanitize=address,undefined
+CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -fno-exceptions -fno-rtti
+OPT      = -O3 -march=native -flto -DNDEBUG
+DBG      = -O0 -g3 -fsanitize=address,undefined
 
 .PHONY: all debug clean
 
 all: $(EXE)
 
 $(EXE): $(SRC) $(HDR)
-	$(CC) $(CFLAGS) $(OPT) $(SRC) -o $@ -lm
+	$(CXX) $(CXXFLAGS) $(OPT) $(SRC) -o $@
 
 debug: $(EXE)-debug
 
 $(EXE)-debug: $(SRC) $(HDR)
-	$(CC) $(CFLAGS) $(DBG) $(SRC) -o $@ -lm
+	$(CXX) $(CXXFLAGS) $(DBG) $(SRC) -o $@
 
 clean:
 	rm -f $(EXE) $(EXE)-debug
