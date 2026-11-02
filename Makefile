@@ -1,32 +1,48 @@
 EXE      = fleche
 SRC      = $(wildcard src/*.cpp)
-TEST_SRC = $(wildcard tests/*.cpp) $(filter-out src/main.cpp, $(SRC))
 HDR      = $(wildcard src/*.h)
+TEST_SRC = $(wildcard tests/*.cpp) $(filter-out src/main.cpp, $(SRC))
+TEST_HDR = $(wildcard tests/*.h)
 
 CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -fno-exceptions -fno-rtti
 OPT      = -O3 -march=native -flto -DNDEBUG
 DBG      = -O0 -g3 -fsanitize=address,undefined
+
+ifeq ($(V),1)
+  Q =
+else
+  Q = @
+endif
+
+BLUE  = \033[34m
+GREEN = \033[32m
+RESET = \033[0m
 
 .PHONY: all debug test clean format
 
 all: $(EXE)
 
 $(EXE): $(SRC) $(HDR)
-	$(CXX) $(CXXFLAGS) $(OPT) $(SRC) -o $@
+	@printf "  $(BLUE)CXX$(RESET)    %s $(GREEN)(release)$(RESET)\n" $@
+	$(Q)$(CXX) $(CXXFLAGS) $(OPT) $(SRC) -o $@
 
 debug: $(EXE)-debug
 
 $(EXE)-debug: $(SRC) $(HDR)
-	$(CXX) $(CXXFLAGS) $(DBG) $(SRC) -o $@
+	@printf "  $(BLUE)CXX$(RESET)    %s $(GREEN)(debug)$(RESET)\n" $@
+	$(Q)$(CXX) $(CXXFLAGS) $(DBG) $(SRC) -o $@
 
 test: $(EXE)-test
-	./$(EXE)-test
+	$(Q)./$(EXE)-test
 
-$(EXE)-test: $(TEST_SRC) $(HDR) tests/test.h
-	$(CXX) $(CXXFLAGS) $(DBG) -Isrc $(TEST_SRC) -o $@
+$(EXE)-test: $(TEST_SRC) $(HDR) $(TEST_HDR)
+	@printf "  $(BLUE)CXX$(RESET)    %s $(GREEN)(tests)$(RESET)\n" $@
+	$(Q)$(CXX) $(CXXFLAGS) $(DBG) -Isrc $(TEST_SRC) -o $@
 
 clean:
-	rm -f $(EXE) $(EXE)-debug
+	@printf "  $(BLUE)CLEAN$(RESET)\n"
+	$(Q)rm -f $(EXE) $(EXE)-debug $(EXE)-test
 
 format:
-	clang-format -i src/*.cpp src/*.h tests/*.cpp tests/*.h
+	@printf "  $(BLUE)FORMAT$(RESET)\n"
+	$(Q)clang-format -i $(SRC) $(HDR) $(wildcard tests/*.cpp) $(TEST_HDR)
