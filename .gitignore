@@ -67,6 +67,9 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# tools
+.clang-format
+
 # Exécutables
 /fleche
 /fleche-*

@@ -3,8 +3,6 @@
 #include "types.h"
 #include <cassert>
 
-constexpr Bitboard sq_bb(int square) { return Bitboard(1) << square; }
-
 constexpr int piece_color(int piece) { return piece >> 3; }
 constexpr int piece_type(int piece) { return piece & 7; }
 
