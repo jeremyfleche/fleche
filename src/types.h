@@ -1,5 +1,4 @@
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
 
 #include <cstdint>
 
@@ -21,7 +20,6 @@ struct Position {
 	uint8_t castling;		// WHITE_OO, WHITE_OOO, BLACK_OO, BLACK_OOO
 	uint8_t ep_square;		// en passant squares
 	uint8_t halfmove;		// 50 moves rule
-	uint8_t fullmove;		// move number
+	uint16_t fullmove;		// move number
+	
 };
-
-#endif
