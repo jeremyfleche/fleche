@@ -3,9 +3,6 @@
 #include "types.h"
 #include <cassert>
 
-constexpr int piece_color(int piece) { return piece >> 3; }
-constexpr int piece_type(int piece) { return piece & 7; }
-
 inline void put_piece(Position* p, int piece, int square) {
 	assert(p->board[square] == EMPTY);
 	p->pieces[piece_type(piece)] |= sq_bb(square);
@@ -28,3 +25,5 @@ inline void move_piece(Position* p, int piece, int from, int to) {
 	p->board[from] = EMPTY;
 	p->board[to] = piece;
 }
+
+

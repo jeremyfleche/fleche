@@ -71,6 +71,10 @@ inline constexpr std::array<std::array<Bitboard, 64>, 2> PAWN_ATTACKS = init_paw
 inline constexpr std::array<Bitboard, 64> KING_ATTACKS = init_king_attacks();
 inline constexpr std::array<Bitboard, 64> KNIGHT_ATTACKS = init_knight_attacks();
 
+constexpr Bitboard pawn_attacks(Color color, int square) { return PAWN_ATTACKS[color][square]; }
+constexpr Bitboard king_attacks(int square) { return KING_ATTACKS[square]; }
+constexpr Bitboard knight_attacks(int square) { return KNIGHT_ATTACKS[square]; }
+
 static_assert(pawn_attacks(WHITE, A2) == bb(B3));
 static_assert(pawn_attacks(BLACK, H7) == bb(G6));
 static_assert(pawn_attacks(WHITE, F3) == bb(E4, G4));
@@ -85,7 +89,3 @@ static_assert(king_attacks(E8) == (bb(D8, D7, E7, F7, F8)));
 static_assert(king_attacks(A1) == (bb(A2, B2, B1)));
 static_assert(king_attacks(H8) == (bb(G8, G7, H7)));
 static_assert(king_attacks(D4) == (bb(C3, C4, C5, D3, D5, E3, E4, E5)));
-
-constexpr Bitboard pawn_attacks(Color color, int square) { return PAWN_ATTACKS[color][square]; }
-constexpr Bitboard king_attacks(int square) { return KING_ATTACKS[square]; }
-constexpr Bitboard knight_attacks(int square) { return KNIGHT_ATTACKS[square]; }
