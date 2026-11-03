@@ -1,8 +1,7 @@
 #pragma once
 
-#include "types.h"
+#include "position.h"
 #include <array>
-#include <vector>
 
 constexpr std::array<std::array<Bitboard, 64>, 2> init_pawn_attacks() {
 	std::array<std::array<Bitboard, 64>, 2> res{};

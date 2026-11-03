@@ -31,7 +31,8 @@ static void run_suite(const char* name, void (*suite)()) {
 int main() {
 	std::printf("\n");
 
-	run_suite("test_types", test_types);
+	static_suite("test_types");
+	run_suite("test_position", test_position);
 	static_suite("test_attacks");
 
 	std::printf("\n");
