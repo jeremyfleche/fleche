@@ -1,5 +1,5 @@
-#include "test.h"
 #include "position.h"
+#include "test.h"
 
 static void test_put() {
 	Position p{};

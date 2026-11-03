@@ -34,7 +34,7 @@ constexpr std::array<Bitboard, 64> apply_moves_to_bitboard(const int (&moves)[8]
 		const int line = square / 8;
 		const int column = square % 8;
 		Bitboard attacks = 0;
-		for (const auto& move: moves) {
+		for (const auto& move : moves) {
 			int new_line = line + move[0];
 			int new_column = column + move[1];
 			if (new_line >= 0 && new_line < 8 && new_column >= 0 && new_column < 8) {
