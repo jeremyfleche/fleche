@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include <array>
+#include <vector>
 
 constexpr std::array<std::array<Bitboard, 64>, 2> init_pawn_attacks() {
 	std::array<std::array<Bitboard, 64>, 2> res{};
@@ -28,14 +29,13 @@ constexpr std::array<std::array<Bitboard, 64>, 2> init_pawn_attacks() {
 	return res;
 }
 
-constexpr std::array<Bitboard, 64> init_king_attacks() {
+constexpr std::array<Bitboard, 64> apply_moves_to_bitboard(const int (&moves)[8][2]) {
 	std::array<Bitboard, 64> res{};
-	const int king_moves[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
 	for (int square = 0; square < 64; ++square) {
 		const int line = square / 8;
 		const int column = square % 8;
 		Bitboard attacks = 0;
-		for (const auto& move : king_moves) {
+		for (const auto& move: moves) {
 			int new_line = line + move[0];
 			int new_column = column + move[1];
 			if (new_line >= 0 && new_line < 8 && new_column >= 0 && new_column < 8) {
@@ -47,24 +47,14 @@ constexpr std::array<Bitboard, 64> init_king_attacks() {
 	return res;
 }
 
-constexpr std::array<Bitboard, 64> init_knight_attacks() {
-	std::array<Bitboard, 64> res{};
-	const int knight_moves[8][2] = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
-	for (int square = 0; square < 64; ++square) {
-		Bitboard attacks = 0;
-		const int line = square / 8;
-		const int column = square % 8;
+constexpr std::array<Bitboard, 64> init_king_attacks() {
+	const int king_moves[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+	return apply_moves_to_bitboard(king_moves);
+}
 
-		for (const auto& move : knight_moves) {
-			int new_line = line + move[0];
-			int new_column = column + move[1];
-			if (new_line >= 0 && new_line < 8 && new_column >= 0 && new_column < 8) {
-				attacks |= sq_bb(new_line * 8 + new_column);
-			}
-		}
-		res[square] = attacks;
-	}
-	return res;
+constexpr std::array<Bitboard, 64> init_knight_attacks() {
+	const int knight_moves[8][2] = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
+	return apply_moves_to_bitboard(knight_moves);
 }
 
 inline constexpr std::array<std::array<Bitboard, 64>, 2> PAWN_ATTACKS = init_pawn_attacks();
