@@ -2,11 +2,6 @@
 
 #include <cstdio>
 
-// Suites made only of static_assert: if this program compiled, they passed.
-static void static_suite(const char* name) {
-	std::printf("  %s✓%s %-12s %s(static_assert)%s\n", GREEN, RESET, name, DIM, RESET);
-}
-
 // Runs one suite of CHECKs, then prints its status line and its failures.
 static void run_suite(const char* name, void (*suite)()) {
 	const int checks_before = test_checks;
@@ -31,9 +26,8 @@ static void run_suite(const char* name, void (*suite)()) {
 int main() {
 	std::printf("\n");
 
-	static_suite("test_types");
 	run_suite("test_position", test_position);
-	static_suite("test_attacks");
+	run_suite("test_attacks", test_attacks);
 
 	std::printf("\n");
 	if (test_failures == 0) {

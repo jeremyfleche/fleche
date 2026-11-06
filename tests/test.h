@@ -26,6 +26,5 @@ inline int test_message_count = 0;
 		}                                                                                                              \
 	} while (0)
 
-void test_types();
 void test_position();
 void test_attacks();

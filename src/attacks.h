@@ -56,10 +56,100 @@ constexpr std::array<Bitboard, 64> init_knight_attacks() {
 	return apply_moves_to_bitboard(knight_moves);
 }
 
+struct Magic {
+	Bitboard mask;   // relevant blocker squares
+	Bitboard magic;  // magic multiplier
+	uint32_t offset; // start of this square's table in the big array
+	uint8_t shift;   // 64 - number of bits in the mask
+};
+
+constexpr bool on_board(int line, int column) { return line >= 0 && line < 8 && column >= 0 && column < 8; }
+
+constexpr Bitboard ray_mask(int sq, const int (&directions)[4][2]) {
+	Bitboard res = 0;
+	for (const auto& d : directions) {
+		int line = sq / 8 + d[0];
+		int column = sq % 8 + d[1];
+		while (on_board(line + d[0], column + d[1])) {
+			res |= sq_bb(line * 8 + column);
+			line += d[0];
+			column += d[1];
+		}
+	}
+	return res;
+}
+
+constexpr int ROOK_DIRECTIONS[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+constexpr int BISHOP_DIRECTIONS[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+
+constexpr Bitboard rook_mask(int sq) {
+	Bitboard res = 0;
+	int line = sq / 8;
+	int column = sq % 8;
+	int new_line = line;
+	int new_column = column;
+	while (++new_line < 7)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_line = line;
+	while (--new_line > 0)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_line = line;
+	while (++new_column < 7)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_column = column;
+	while (--new_column > 0)
+		res |= sq_bb(new_line * 8 + new_column);
+
+	return res;
+}
+
+constexpr Bitboard bishop_mask(int sq) {
+	Bitboard res = 0;
+	int line = sq / 8;
+	int column = sq % 8;
+	int new_line = line;
+	int new_column = column;
+	while (++new_line < 7 && ++new_column < 7)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_line = line;
+	new_column = column;
+	while (++new_line < 7 && --new_column > 0)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_line = line;
+	new_column = column;
+	while (--new_line > 0 && ++new_column < 7)
+		res |= sq_bb(new_line * 8 + new_column);
+	new_line = line;
+	new_column = column;
+	while (--new_line > 0 && --new_column > 0)
+		res |= sq_bb(new_line * 8 + new_column);
+
+	return res;
+}
+
+constexpr std::array<Bitboard, 64> init_masks(Bitboard (*init_function)(int sq)) {
+	std::array<Bitboard, 64> res{};
+	for (int sq = 0; sq < 64; ++sq)
+		res[sq] = init_function(sq);
+	return res;
+}
+
+inline constexpr std::array<Bitboard, 64> ROOK_MASK = init_masks(rook_mask);
+
+inline constexpr std::array<Bitboard, 64> BISHOP_MASK = init_masks(bishop_mask);
+
+
+extern std::array<Bitboard, 102400> ROOK_TABLE;
+extern std::array<Bitboard, 5248> BISHOP_TABLE;
+
+void attacks_init();
+
 inline constexpr std::array<std::array<Bitboard, 64>, 2> PAWN_ATTACKS = init_pawn_attacks();
 inline constexpr std::array<Bitboard, 64> KING_ATTACKS = init_king_attacks();
 inline constexpr std::array<Bitboard, 64> KNIGHT_ATTACKS = init_knight_attacks();
 
 constexpr Bitboard pawn_attacks(Color color, int square) { return PAWN_ATTACKS[color][square]; }
+
 constexpr Bitboard king_attacks(int square) { return KING_ATTACKS[square]; }
+
 constexpr Bitboard knight_attacks(int square) { return KNIGHT_ATTACKS[square]; }
