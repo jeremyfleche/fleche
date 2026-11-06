@@ -21,6 +21,16 @@ static_assert(BISHOP_MASK[A1] == bb(B2, C3, D4, E5, F6, G7));
 static_assert(BISHOP_MASK[D7] == bb(G4, B5, F5, C6, E6));
 static_assert(BISHOP_MASK[F3] == bb(E2, G2, E4, G4, D5, C6, B7));
 
+static_assert(slow_rook_attacks(H1, 0) == bb(A1, B1, C1, D1, E1, F1, G1, H2, H3, H4, H5, H6, H7, H8));
+static_assert(slow_rook_attacks(H1, bb(H4)) == bb(A1, B1, C1, D1, E1, F1, G1, H2, H3, H4));
+static_assert(slow_rook_attacks(H1, bb(H4, B1)) == bb(B1, C1, D1, E1, F1, G1, H2, H3, H4));
+static_assert(slow_rook_attacks(H1, bb(H4, H5, B1)) == slow_rook_attacks(H1, bb(H4, B1)));
+
+static_assert(slow_bishop_attacks(D4, 0) == bb(A1, G1, B2, F2, C3, E3, C5, E5, B6, F6, A7, G7, H8));
+static_assert(slow_bishop_attacks(D4, bb(F6)) == bb(A1, G1, B2, F2, C3, E3, C5, E5, B6, F6, A7));
+static_assert(slow_bishop_attacks(D4, bb(F6, C3)) == bb(G1, F2, C3, E3, C5, E5, B6, F6, A7));
+static_assert(slow_bishop_attacks(D4, bb(F6, C3, G7)) == slow_bishop_attacks(D4, bb(F6, C3)));
+
 static_assert(pawn_attacks(WHITE, A2) == bb(B3));
 static_assert(pawn_attacks(BLACK, H7) == bb(G6));
 static_assert(pawn_attacks(WHITE, F3) == bb(E4, G4));

@@ -64,6 +64,7 @@ struct Magic {
 };
 
 constexpr bool on_board(int line, int column) { return line >= 0 && line < 8 && column >= 0 && column < 8; }
+constexpr bool is_occupied(Bitboard occ, int line, int column) { return (occ & sq_bb(line * 8 + column)) != 0; }
 
 constexpr Bitboard ray_mask(int sq, const int (&directions)[4][2]) {
 	Bitboard res = 0;
@@ -79,65 +80,39 @@ constexpr Bitboard ray_mask(int sq, const int (&directions)[4][2]) {
 	return res;
 }
 
+constexpr Bitboard ray_attacks(int sq, Bitboard occ, const int (&directions)[4][2]) {
+	Bitboard res = 0;
+	for (const auto& d : directions) {
+		int line = sq / 8 + d[0];
+		int column = sq % 8 + d[1];
+		while (on_board(line, column)) {
+			res |= sq_bb(line * 8 + column);
+			if (is_occupied(occ, line, column)) {
+				break;
+			}
+			line += d[0];
+			column += d[1];
+		}
+	}
+	return res;
+}
+
 constexpr int ROOK_DIRECTIONS[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 constexpr int BISHOP_DIRECTIONS[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-constexpr Bitboard rook_mask(int sq) {
-	Bitboard res = 0;
-	int line = sq / 8;
-	int column = sq % 8;
-	int new_line = line;
-	int new_column = column;
-	while (++new_line < 7)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_line = line;
-	while (--new_line > 0)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_line = line;
-	while (++new_column < 7)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_column = column;
-	while (--new_column > 0)
-		res |= sq_bb(new_line * 8 + new_column);
-
-	return res;
-}
-
-constexpr Bitboard bishop_mask(int sq) {
-	Bitboard res = 0;
-	int line = sq / 8;
-	int column = sq % 8;
-	int new_line = line;
-	int new_column = column;
-	while (++new_line < 7 && ++new_column < 7)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_line = line;
-	new_column = column;
-	while (++new_line < 7 && --new_column > 0)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_line = line;
-	new_column = column;
-	while (--new_line > 0 && ++new_column < 7)
-		res |= sq_bb(new_line * 8 + new_column);
-	new_line = line;
-	new_column = column;
-	while (--new_line > 0 && --new_column > 0)
-		res |= sq_bb(new_line * 8 + new_column);
-
-	return res;
-}
-
-constexpr std::array<Bitboard, 64> init_masks(Bitboard (*init_function)(int sq)) {
+constexpr std::array<Bitboard, 64> init_masks(const int (&directions)[4][2]) {
 	std::array<Bitboard, 64> res{};
 	for (int sq = 0; sq < 64; ++sq)
-		res[sq] = init_function(sq);
+		res[sq] = ray_mask(sq, directions);
 	return res;
 }
 
-inline constexpr std::array<Bitboard, 64> ROOK_MASK = init_masks(rook_mask);
+constexpr Bitboard slow_rook_attacks(int sq, Bitboard occ) { return ray_attacks(sq, occ, ROOK_DIRECTIONS); }
+constexpr Bitboard slow_bishop_attacks(int sq, Bitboard occ) { return ray_attacks(sq, occ, BISHOP_DIRECTIONS); }
 
-inline constexpr std::array<Bitboard, 64> BISHOP_MASK = init_masks(bishop_mask);
+inline constexpr std::array<Bitboard, 64> ROOK_MASK = init_masks(ROOK_DIRECTIONS);
 
+inline constexpr std::array<Bitboard, 64> BISHOP_MASK = init_masks(BISHOP_DIRECTIONS);
 
 extern std::array<Bitboard, 102400> ROOK_TABLE;
 extern std::array<Bitboard, 5248> BISHOP_TABLE;

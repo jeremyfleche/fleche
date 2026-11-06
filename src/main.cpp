@@ -3,6 +3,6 @@
 #include <cstdio>
 
 int main() {
-	display_bitboard(bishop_mask(F3));
+	
 	return 0;
 }
