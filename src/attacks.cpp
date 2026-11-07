@@ -46,11 +46,32 @@ static_assert(knight_attacks(A1) == bb(B3, C2));
 static_assert(knight_attacks(H8) == (bb(F7, G6)));
 static_assert(knight_attacks(D4) == (bb(C2, E2, F3, F5, E6, C6, B5, B3)));
 
-void init_rook_attacks() {}
+static_assert(ROOK_MAGICS[H8].offset + (1 << (64 - ROOK_MAGICS[H8].shift)) == 102400, "Rook table size mismatch");
+static_assert(BISHOP_MAGICS[H8].offset + (1 << (64 - BISHOP_MAGICS[H8].shift)) == 5248, "Bishop table size mismatch");
 
-void init_bishop_attacks() {}
+void init_rook_attacks() {
+	for (int sq = 0; sq < 64; ++sq) {
+		const Magic& m = ROOK_MAGICS[sq];
+		Bitboard occ = 0;
+		do {
+			ROOK_TABLE[m.offset + ((occ * m.magic) >> m.shift)] = slow_rook_attacks(sq, occ);
+			occ = (occ - m.mask) & m.mask; // generate next subset of mask
+		} while (occ != 0);
+	}
+}
 
-void attacks_init() {
+void init_bishop_attacks() {
+	for (int sq = 0; sq < 64; ++sq) {
+		const Magic& m = BISHOP_MAGICS[sq];
+		Bitboard occ = 0;
+		do {
+			BISHOP_TABLE[m.offset + ((occ * m.magic) >> m.shift)] = slow_bishop_attacks(sq, occ);
+			occ = (occ - m.mask) & m.mask; // generate next subset of mask
+		} while (occ != 0);
+	}
+}
+
+void init_attacks() {
 	init_rook_attacks();
 	init_bishop_attacks();
 }

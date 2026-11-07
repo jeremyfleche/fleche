@@ -18,7 +18,7 @@ BLUE  = \033[34m
 GREEN = \033[32m
 RESET = \033[0m
 
-.PHONY: all debug test clean format
+.PHONY: all debug test clean format magics
 
 all: $(EXE)
 
@@ -39,10 +39,16 @@ $(EXE)-test: $(TEST_SRC) $(HDR) $(TEST_HDR)
 	@printf "  $(BLUE)CXX$(RESET)    %s $(GREEN)(tests)$(RESET)\n" $@
 	$(Q)$(CXX) $(CXXFLAGS) $(DBG) -Isrc $(TEST_SRC) -o $@
 
+magics:
+	@printf "  $(BLUE)CXX$(RESET)    find_magics $(GREEN)(tool)$(RESET)\n"
+	$(Q)$(CXX) $(CXXFLAGS) -O2 -Isrc tools/find_magics.cpp -o fleche-find_magics
+	@printf "  $(BLUE)RUN$(RESET)    find_magics $(GREEN)(tool)$(RESET)\n"
+		$(Q)./fleche-find_magics > src/magics.h.tmp && mv src/magics.h.tmp src/magics.h
+
 clean:
 	@printf "  $(BLUE)CLEAN$(RESET)\n"
-	$(Q)rm -f $(EXE) $(EXE)-debug $(EXE)-test
+	$(Q)rm -f $(EXE) $(EXE)-debug $(EXE)-test $(EXE)-find_magics src/magics.h.tmp
 
 format:
 	@printf "  $(BLUE)FORMAT$(RESET)\n"
-	$(Q)clang-format -i $(SRC) $(HDR) $(wildcard tests/*.cpp) $(TEST_HDR)
+	$(Q)clang-format -i $(SRC) $(HDR) $(wildcard tests/*.cpp) $(TEST_HDR) $(wildcard tools/*.cpp) $(wildcard tools/*.h)
