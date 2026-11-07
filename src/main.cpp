@@ -2,7 +2,4 @@
 #include "debug.h"
 #include <cstdio>
 
-int main() {
-	
-	return 0;
-}
+int main() { return 0; }
