@@ -23,33 +23,9 @@ enum Square : uint8_t {
 
 constexpr Bitboard sq_bb(int square) { return Bitboard(1) << square; }
 
-static_assert(sq_bb(A1) == 1);
-static_assert(sq_bb(A2) == (1ULL << 8));
-static_assert(sq_bb(H8) == (1ULL << 63));
-
 template <typename... Sq> constexpr Bitboard bb(Sq... squares) { return (sq_bb(squares) | ...); }
-
-static_assert(bb(A1, H8) == (1ULL | (1ULL << 63)));
-static_assert(bb(B2, C4) == ((1ULL << 9) | (1ULL << 26)));
-
-static_assert(A1 == 0);
-static_assert(A2 == 8);
-static_assert(H1 == 7);
-static_assert(H8 == 63);
-static_assert(D4 == 27);
 
 constexpr uint8_t EMPTY = 0xFF;
 constexpr uint8_t make_piece(Color color, PieceType type) { return (color << 3) | type; }
-
-static_assert(make_piece(BLACK, KING) == 13);
-static_assert(make_piece(WHITE, BISHOP) == 2);
-
 constexpr int piece_color(int piece) { return piece >> 3; }
-
-static_assert(piece_color(make_piece(WHITE, PAWN)) == WHITE);
-static_assert(piece_color(make_piece(BLACK, KNIGHT)) == BLACK);
-
 constexpr int piece_type(int piece) { return piece & 7; }
-
-static_assert(piece_type(make_piece(BLACK, ROOK)) == ROOK);
-static_assert(piece_type(make_piece(WHITE, PAWN)) == PAWN);

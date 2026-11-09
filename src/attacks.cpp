@@ -3,7 +3,7 @@
 std::array<Bitboard, 102400> ROOK_TABLE;
 std::array<Bitboard, 5248> BISHOP_TABLE;
 
-void init_rook_attacks() {
+static void init_rook_attacks() {
 	for (int sq = 0; sq < 64; ++sq) {
 		const Magic& m = ROOK_MAGICS[sq];
 		Bitboard occ = 0;
@@ -14,7 +14,7 @@ void init_rook_attacks() {
 	}
 }
 
-void init_bishop_attacks() {
+static void init_bishop_attacks() {
 	for (int sq = 0; sq < 64; ++sq) {
 		const Magic& m = BISHOP_MAGICS[sq];
 		Bitboard occ = 0;

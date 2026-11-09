@@ -1,16 +1,42 @@
 #include "attacks.h"
 #include "debug.h"
 #include "test.h"
+#include <random>
 
-constexpr int total_bits(const std::array<Bitboard, 64>& masks) {
+static std::mt19937_64 rng(1234); // fixed seed: failures are reproducible
+
+// Random bitboard: about 32, 16 or 8 bits set depending on density (0, 1 or 2).
+static inline Bitboard random_bits(int density) {
+	Bitboard bits = rng();
+	for (int i = 0; i < density; ++i)
+		bits &= rng();
+	return bits;
+}
+
+static constexpr int total_bits(const std::array<Bitboard, 64>& masks) {
 	int total = 0;
 	for (Bitboard mask : masks)
 		total += __builtin_popcountll(mask);
 	return total;
 }
 
+static constexpr bool is_symmetric(const std::array<Bitboard, 64>& table1, const std::array<Bitboard, 64>& table2) {
+	for (int a = 0; a < 64; ++a)
+		for (int b = 0; b < 64; ++b) {
+			const bool a_attacks_b = table1[a] & sq_bb(b);
+			const bool b_attacks_a = table2[b] & sq_bb(a);
+			if (a_attacks_b != b_attacks_a)
+				return false;
+		}
+	return true;
+}
+
 static_assert(total_bits(ROOK_MASK) == 672);
 static_assert(total_bits(BISHOP_MASK) == 364);
+static_assert(total_bits(PAWN_ATTACKS[WHITE]) == 98);
+static_assert(total_bits(PAWN_ATTACKS[BLACK]) == 98);
+static_assert(total_bits(KING_ATTACKS) == 420);
+static_assert(total_bits(KNIGHT_ATTACKS) == 336);
 
 static_assert(ROOK_MASK[A1] == bb(A2, A3, A4, A5, A6, A7, B1, C1, D1, E1, F1, G1));
 static_assert(ROOK_MASK[H8] == bb(H2, H3, H4, H5, H6, H7, B8, C8, D8, E8, F8, G8));
@@ -48,7 +74,11 @@ static_assert(knight_attacks(D4) == (bb(C2, E2, F3, F5, E6, C6, B5, B3)));
 static_assert(ROOK_MAGICS[H8].offset + (1 << (64 - ROOK_MAGICS[H8].shift)) == 102400, "Rook table size mismatch");
 static_assert(BISHOP_MAGICS[H8].offset + (1 << (64 - BISHOP_MAGICS[H8].shift)) == 5248, "Bishop table size mismatch");
 
-void test_attacks_rook() {
+static_assert(is_symmetric(KNIGHT_ATTACKS, KNIGHT_ATTACKS));
+static_assert(is_symmetric(KING_ATTACKS, KING_ATTACKS));
+static_assert(is_symmetric(PAWN_ATTACKS[WHITE], PAWN_ATTACKS[BLACK]));
+
+static void test_attacks_rook() {
 	for (int sq = 0; sq < 64; ++sq) {
 		const Magic& m = ROOK_MAGICS[sq];
 		Bitboard occ = 0;
@@ -65,7 +95,7 @@ void test_attacks_rook() {
 	}
 }
 
-void test_attacks_bishop() {
+static void test_attacks_bishop() {
 	for (int sq = 0; sq < 64; ++sq) {
 		const Magic& m = BISHOP_MAGICS[sq];
 		Bitboard occ = 0;
@@ -82,8 +112,25 @@ void test_attacks_bishop() {
 	}
 }
 
+static void test_attacks_queen() {
+	CHECK(__builtin_popcountll(queen_attacks(D4, 0)) == 27);
+	CHECK(__builtin_popcountll(queen_attacks(A1, 0)) == 21);
+	CHECK(queen_attacks(D4, bb(C3, D3, E3, E4, E5, D5, C5, C4)) == king_attacks(D4));
+	CHECK(queen_attacks(D4, bb(D5, E4)) ==
+	      bb(A1, D1, G1, B2, D2, F2, C3, D3, E3, A4, B4, C4, E4, C5, D5, E5, B6, F6, A7, G7, H8));
+	for (int sq = 0; sq < 64; ++sq) {
+		for (int i = 0; i < 150; ++i) {
+			Bitboard occ = random_bits(i % 3);
+			Bitboard expected = rook_attacks(sq, occ) | bishop_attacks(sq, occ);
+			Bitboard actual = queen_attacks(sq, occ);
+			CHECK(expected == actual);
+		}
+	}
+}
+
 void test_attacks() {
 	init_attacks();
 	test_attacks_rook();
 	test_attacks_bishop();
+	test_attacks_queen();
 }
