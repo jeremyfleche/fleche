@@ -3,6 +3,7 @@
 #include "types.h"
 #include <cassert>
 #include <cstring>
+#include <string>
 
 class Position {
   public:
@@ -11,10 +12,14 @@ class Position {
 	Bitboard pieces(int type) const { return pieces_[type]; }
 	Bitboard pieces(int color, int type) const { return pieces_[type] & colors_[color]; }
 	Bitboard colors(int color) const { return colors_[color]; }
-	int piece_on(Square sq) const { return board_[sq]; }
+	int piece_on(int sq) const { return board_[sq]; }
 	Color side_to_move() const { return side_to_move_; }
 	Square ep_square() const { return ep_square_; }
 	uint64_t hash() const { return hash_; }
+	bool set_fen(const std::string& fen);
+	std::string fen() const;
+	bool is_consistent() const;
+	void display() const;
 
 	void put_piece(int piece, int square) {
 		assert(board_[square] == EMPTY);
