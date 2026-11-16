@@ -122,11 +122,11 @@ static void test_fen_roundtrip() {
 	    "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
 	    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
 	    "4k3/8/8/8/8/8/8/4K3 b - - 99 150",
-	    "7k/8/8/8/8/8/8/K7 w K - 0 1",
-	    "7k/8/8/8/8/8/8/K7 w Q - 0 1",
-	    "7k/8/8/8/8/8/8/K7 w k - 0 1",
-	    "7k/8/8/8/8/8/8/K7 w q - 0 1",
-	    "7k/8/8/8/8/8/8/K7 w Kq - 0 1",
+	    "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
+	    "4k3/8/8/8/8/8/8/R3K3 w Q - 0 1",
+	    "4k2r/8/8/8/8/8/8/4K3 w k - 0 1",
+	    "r3k3/8/8/8/8/8/8/4K3 w q - 0 1",
+	    "r3k3/8/8/8/8/8/8/4K2R w Kq - 0 1",
 	    "7k/8/8/8/8/8/8/K7 w - - 255 65535",
 	};
 	for (const char* fen : fens) {
@@ -200,71 +200,115 @@ static void test_fen_move_counters() {
 	CHECK(!p.set_fen("4k3/8/8/8/8/8/8/4K3 w - - 256 1", &error), error);
 }
 
-// set_fen() must fail and leave the position untouched.
-static void check_invalid_fen(const char* fen, std::string* expected_error = nullptr) {
+// set_fen() must fail with an error starting with expected_error, and leave the position untouched.
+static void check_invalid_fen(const char* fen, const char* expected_error) {
 	Position p{};
-	CHECK(p.set_fen(START_FEN, expected_error));
-	CHECK(!p.set_fen(fen, expected_error), fen);
-	CHECK(p.fen() == START_FEN);
-	CHECK(p.is_consistent());
+	std::string error;
+	CHECK(p.set_fen(START_FEN, &error), START_FEN);
+	CHECK(!p.set_fen(fen, &error), std::string(fen) + " -> " + error);
+	CHECK(error.starts_with(expected_error), std::string(fen) + " -> " + error);
+	CHECK(p.fen() == START_FEN, fen);
+	CHECK(p.is_consistent(), fen);
 }
 
 static void test_fen_invalid() {
 	// Missing fields
-	check_invalid_fen("");
-	check_invalid_fen("   ");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
+	check_invalid_fen("", "Invalid FEN string: not enough fields");
+	check_invalid_fen("   ", "Invalid FEN string: not enough fields");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "Invalid FEN string: not enough fields");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w", "Invalid FEN string: not enough fields");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq", "Invalid FEN string: not enough fields");
 
 	// Placement: wrong number of ranks
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1");
-	check_invalid_fen("/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr//pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of ranks");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of ranks");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of ranks");
 
-	// Placement: wrong number of files
-	check_invalid_fen("rnbqkbn/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/7/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/44p/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR1 w KQkq - 0 1");
+	// Placement: wrong number of files (an empty rank has 0 files)
+	check_invalid_fen("/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
+	check_invalid_fen("rnbqkbnr//pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
+	check_invalid_fen("rnbqkbn/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
+	check_invalid_fen("rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "Invalid piece placement: line");
+	check_invalid_fen("rnbqkbnr/pppppppp/7/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
+	check_invalid_fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "Invalid piece character");
+	check_invalid_fen("rnbqkbnr/pppppppp/44p/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+	                  "Invalid piece placement: consecutive digits");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR1 w KQkq - 0 1",
+	                  "Invalid piece placement: wrong number of files");
 
 	// Placement: invalid characters
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNX w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/0/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR- w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNX w KQkq - 0 1", "Invalid piece character");
+	check_invalid_fen("rnbqkbnr/pppppppp/0/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "Invalid piece character");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR- w KQkq - 0 1", "Invalid piece character");
 
 	// Side to move
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR W KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR wb KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR W KQkq - 0 1", "Invalid side to move");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1", "Invalid side to move");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR wb KQkq - 0 1", "Invalid side to move");
 
 	// Castling
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkx - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ-kq - 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1");
-	check_invalid_fen("r3k2r/8/8/8/8/8/8/R3K2R w qkQK - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkx - 0 1", "Invalid castling rights");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ-kq - 0 1", "Invalid castling rights");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1", "Invalid castling rights");
+	check_invalid_fen("r3k2r/8/8/8/8/8/8/R3K2R w qkQK - 0 1", "Invalid castling rights");
+	check_invalid_fen("7k/8/8/8/8/8/8/K7 w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // no king on e1, no rook on h1
+	check_invalid_fen("7k/8/8/8/8/8/8/K7 w Q - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // no king on e1, no rook on a1
+	check_invalid_fen("7k/8/8/8/8/8/8/K7 w k - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // no king on e8, no rook on h8
+	check_invalid_fen("7k/8/8/8/8/8/8/K7 w q - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // no king on e8, no rook on a8
+	check_invalid_fen(
+	    "7k/8/8/8/8/8/8/K7 w Kq - 0 1",
+	    "Rook or king not in the correct square for castling rights"); // no king on e1/e8, no rook on h1/a8
+	check_invalid_fen("4k3/8/8/8/8/8/8/4K3 w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // king on e1, no rook on h1
+	check_invalid_fen("4k3/8/8/8/8/8/8/5K1R w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // rook on h1, king not on e1
+	check_invalid_fen("4k3/8/8/8/8/8/8/R3K3 w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // rook on a1 instead of h1
+	check_invalid_fen("4k3/8/8/8/8/8/8/4K2r w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // black rook on h1
+	check_invalid_fen("4k3/8/8/8/8/8/8/4K2N w K - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // knight on h1
+	check_invalid_fen("r3k3/8/8/8/8/8/8/4K3 w k - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // rook on a8 instead of h8
+	check_invalid_fen("r4k2/8/8/8/8/8/8/4K3 w q - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // rook on a8, king not on e8
+	check_invalid_fen("r3k2r/8/8/8/8/8/8/4K3 w KQkq - 0 1",
+	                  "Rook or king not in the correct square for castling rights"); // black can castle, white cannot
 
 	// En passant
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e33 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq i3 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e9 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq E3 0 1");
-	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 3e 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e 0 1", "Invalid en passant square");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e33 0 1", "Invalid en passant square");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq i3 0 1", "Invalid en passant square");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e9 0 1",
+	                  "En passant square must be on rank 6 for white to move");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq E3 0 1", "Invalid en passant square");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 3e 0 1", "Invalid en passant square");
 
-
-	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 w - e3 0 1");   // wrong side to move
-	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 b - e4 0 1");   // wrong rank
-	check_invalid_fen("4k3/8/8/8/3p4/8/8/4K3 b - e3 0 1");    // no pawn on e4
-	check_invalid_fen("4k3/8/8/8/3pp3/8/8/4K3 b - e3 0 1");   // pawn of the wrong color on e4
-	check_invalid_fen("4k3/8/8/8/3pP3/4N3/8/4K3 b - e3 0 1"); // en passant square occupied
-	check_invalid_fen("4k3/8/8/8/3pP3/8/4N3/4K3 b - e3 0 1"); // origin square occupied
-	check_invalid_fen("8/8/8/8/8/8/8/8 w - - 0 1");           // no kings
+	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 w - e3 0 1",
+	                  "En passant square must be on rank 6 for white to move"); // wrong side to move
+	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 b - e4 0 1",
+	                  "En passant square must be on rank 3 for black to move");                // wrong rank
+	check_invalid_fen("4k3/8/8/8/3p4/8/8/4K3 b - e3 0 1", "No pawn that did the double move"); // no pawn on e4
+	check_invalid_fen("4k3/8/8/8/3pp3/8/8/4K3 b - e3 0 1",
+	                  "No pawn that did the double move"); // pawn of the wrong color on e4
+	check_invalid_fen("4k3/8/8/8/3pP3/4N3/8/4K3 b - e3 0 1",
+	                  "En passant square is occupied"); // en passant square occupied
+	check_invalid_fen("4k3/8/8/8/3pP3/8/4N3/4K3 b - e3 0 1",
+	                  "Starting square of the pawn that did the double move is occupied"); // origin square occupied
+	check_invalid_fen("8/8/8/8/8/8/8/8 w - - 0 1", "Invalid number of kings");             // no kings
 }
 
 static void test_fen_overwrite() {

@@ -19,8 +19,11 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 	std::istringstream iss(fen);
 
 	std::string placement, side_to_move, castling, en_passant;
-	if (!(iss >> placement >> side_to_move >> castling >> en_passant))
+	if (!(iss >> placement >> side_to_move >> castling >> en_passant)) {
+		if (error)
+			*error = "Invalid FEN string: not enough fields";
 		return false;
+	}
 
 	Position new_position = Position();
 
@@ -59,8 +62,16 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 	bool prev_was_digit = false;
 	for (char c : placement) {
 		if (c == '/') {
-			if (line == 0 || column != 8)
+			if (column != 8) {
+				if (error)
+					*error = "Invalid piece placement: wrong number of files";
 				return false;
+			}
+			if (line == 0) {
+				if (error)
+					*error = "Invalid piece placement: wrong number of ranks";
+				return false;
+			}
 			line--;
 			column = 0;
 			prev_was_digit = false;
@@ -92,8 +103,16 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 		}
 	}
 
-	if (line != 0 || column != 8)
+	if (column != 8) {
+		if (error)
+			*error = "Invalid piece placement: wrong number of files";
 		return false;
+	}
+	if (line != 0) {
+		if (error)
+			*error = "Invalid piece placement: wrong number of ranks";
+		return false;
+	}
 
 	if (__builtin_popcountll(new_position.pieces(WHITE, KING)) != 1 ||
 	    __builtin_popcountll(new_position.pieces(BLACK, KING)) != 1) {
@@ -133,6 +152,18 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 			}
 			castling_index = i;
 			new_position.castling_ |= 1 << i;
+
+			int king_square = (i < 2) ? E1 : E8;
+			int rook_square = (i == 0) ? H1 : (i == 1) ? A1 : (i == 2) ? H8 : A8;
+
+			int king_piece = new_position.piece_on(king_square);
+			int rook_piece = new_position.piece_on(rook_square);
+			if (king_piece != make_piece((i < 2) ? WHITE : BLACK, KING) ||
+			    rook_piece != make_piece((i < 2) ? WHITE : BLACK, ROOK)) {
+				if (error)
+					*error = "Rook or king not in the correct square for castling rights: " + castling;
+				return false;
+			}
 		}
 	}
 
