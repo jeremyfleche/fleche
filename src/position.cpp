@@ -345,3 +345,18 @@ bool Position::is_consistent() const {
 	}
 	return true;
 }
+
+bool Position::is_square_attacked(Square square, Color by) const {
+
+	Bitboard occ = colors_[WHITE] | colors_[BLACK];
+	Bitboard attackers = 0;
+	Color opponent = (by == WHITE) ? BLACK : WHITE;
+
+	attackers |= pawn_attacks(opponent, square) & pieces(by, PAWN);
+	attackers |= KNIGHT_ATTACKS[square] & pieces(by, KNIGHT);
+	attackers |= KING_ATTACKS[square] & pieces(by, KING);
+	attackers |= bishop_attacks(square, occ) & (pieces(by, BISHOP) | pieces(by, QUEEN));
+	attackers |= rook_attacks(square, occ) & (pieces(by, ROOK) | pieces(by, QUEEN));
+
+	return attackers != 0;
+}

@@ -24,6 +24,7 @@ class Position {
 	std::string fen() const;
 	bool is_consistent() const;
 	void display() const;
+	bool is_square_attacked(Square square, Color by) const;
 
 	void put_piece(int piece, int square) {
 		assert(board_[square] == EMPTY);
