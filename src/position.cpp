@@ -3,9 +3,25 @@
 #include <charconv>
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
 
 constexpr std::string_view PIECE_CHARS = "PNBRQKpnbrqk";
 constexpr std::string_view CASTLING_CHARS = "KQkq";
+
+namespace {
+// Square backgrounds (Lichess-like palette)
+constexpr const char* LIGHT_SQUARE = "\033[48;2;240;217;181m";
+constexpr const char* DARK_SQUARE = "\033[48;2;181;136;99m";
+
+// Piece foregrounds: 1 = bold, 22 = back to normal intensity (otherwise bold leaks onto black pieces)
+constexpr const char* WHITE_PIECE = "\033[1;38;2;255;255;255m";
+constexpr const char* BLACK_PIECE = "\033[22;38;2;0;0;0m";
+constexpr const char* RESET_COLOR = "\033[0m";
+
+// Filled glyphs for both colors, indexed by PieceType.
+// \uFE0E forces text rendering of the pawn (some terminals draw it as a 2-column emoji).
+constexpr const char* PIECE_GLYPHS[6] = {"♟\uFE0E", "♞", "♝", "♜", "♛", "♚"};
+} // namespace
 
 // Parses the whole string as a decimal integer. Fails on empty input, trailing characters or overflow.
 static bool parse_int(const std::string& s, int& value) {
@@ -293,23 +309,38 @@ std::string Position::fen() const {
 }
 
 void Position::display() const {
-	printf("    ┌─────────────────┐\n");
-	for (int rank = 7; rank >= 0; --rank) {
-		printf("  %d │ ", (rank + 1));
-		for (int file = 0; file < 8; ++file) {
-			int square = rank * 8 + file;
-			int piece = board_[square];
-			int color = piece_color(piece);
-			int type = piece_type(piece);
-			char c = (piece == EMPTY) ? '.' : PIECE_CHARS[color * 6 + type];
-			printf("%c ", c);
-		}
-		printf("│\n");
-	}
-	printf("    └─────────────────┘\n");
-	printf("      A B C D E F G H\n\n");
+	// No escape codes when output is piped (UCI GUI, logs, tests)
+	const bool pretty = isatty(STDOUT_FILENO);
 
-	printf("FEN: %s\n", fen().c_str());
+	for (int rank = 7; rank >= 0; --rank) {
+		std::cout << ' ' << (rank + 1) << ' ';
+
+		for (int file = 0; file < 8; ++file) {
+			int piece = board_[rank * 8 + file];
+
+			if (!pretty) {
+				char c = (piece == EMPTY) ? '.' : PIECE_CHARS[piece_color(piece) * 6 + piece_type(piece)];
+				std::cout << ' ' << c << ' ';
+				continue;
+			}
+
+			bool light = (rank + file) % 2 == 1; // a1 (0 + 0) is dark
+			std::cout << (light ? LIGHT_SQUARE : DARK_SQUARE);
+
+			if (piece == EMPTY)
+				std::cout << "  ";
+			else
+				std::cout << (piece_color(piece) == WHITE ? WHITE_PIECE : BLACK_PIECE)
+				          << PIECE_GLYPHS[piece_type(piece)] << ' ';
+		}
+
+		if (pretty)
+			std::cout << RESET_COLOR;
+		std::cout << '\n';
+	}
+
+	std::cout << "   A B C D E F G H\n\n";
+	std::cout << "FEN: " << fen() << '\n';
 }
 
 bool Position::is_consistent() const {
@@ -346,17 +377,16 @@ bool Position::is_consistent() const {
 	return true;
 }
 
-bool Position::is_square_attacked(Square square, Color by) const {
+Bitboard Position::attackers_to(Square square, Bitboard occ) const {
 
-	Bitboard occ = colors_[WHITE] | colors_[BLACK];
 	Bitboard attackers = 0;
-	Color opponent = (by == WHITE) ? BLACK : WHITE;
 
-	attackers |= pawn_attacks(opponent, square) & pieces(by, PAWN);
-	attackers |= KNIGHT_ATTACKS[square] & pieces(by, KNIGHT);
-	attackers |= KING_ATTACKS[square] & pieces(by, KING);
-	attackers |= bishop_attacks(square, occ) & (pieces(by, BISHOP) | pieces(by, QUEEN));
-	attackers |= rook_attacks(square, occ) & (pieces(by, ROOK) | pieces(by, QUEEN));
+	attackers |= PAWN_ATTACKS[WHITE][square] & pieces(BLACK, PAWN);
+	attackers |= PAWN_ATTACKS[BLACK][square] & pieces(WHITE, PAWN);
+	attackers |= KNIGHT_ATTACKS[square] & pieces(KNIGHT);
+	attackers |= KING_ATTACKS[square] & pieces(KING);
+	attackers |= rook_attacks(square, occ) & (pieces(ROOK) | pieces(QUEEN));
+	attackers |= bishop_attacks(square, occ) & (pieces(BISHOP) | pieces(QUEEN));
 
-	return attackers != 0;
+	return attackers;
 }

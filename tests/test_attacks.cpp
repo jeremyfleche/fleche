@@ -129,7 +129,6 @@ static void test_attacks_queen() {
 }
 
 void test_attacks() {
-	init_attacks();
 	test_attacks_rook();
 	test_attacks_bishop();
 	test_attacks_queen();

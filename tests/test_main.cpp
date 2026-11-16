@@ -1,3 +1,4 @@
+#include "attacks.h"
 #include "test.h"
 
 #include <cstdio>
@@ -26,6 +27,7 @@ static void run_suite(const char* name, void (*suite)()) {
 int main() {
 	std::printf("\n");
 
+	init_attacks();
 	run_suite("test_position", test_position);
 	run_suite("test_attacks", test_attacks);
 

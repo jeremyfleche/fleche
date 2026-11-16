@@ -335,10 +335,114 @@ static void test_fen() {
 	test_fen_overwrite();
 }
 
+static Bitboard occupied(const Position& p) { return p.colors(WHITE) | p.colors(BLACK); }
+
+static void test_attackers_to_pawns() {
+	Position p{};
+	std::string error;
+
+	// White pawns attack upwards, black pawns downwards; pushes are not attacks
+	CHECK(p.set_fen("4k3/8/8/2ppp3/8/2PPP3/8/4K3 w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(C3, E3, C5, E5));
+	CHECK((p.attackers_to(D4, occupied(p)) & p.colors(WHITE)) == bb(C3, E3));
+	CHECK((p.attackers_to(D4, occupied(p)) & p.colors(BLACK)) == bb(C5, E5));
+
+	// Pawns on the wrong side do not attack
+	CHECK(p.set_fen("4k3/8/8/2P1P3/8/2p1p3/8/4K3 w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == 0);
+
+	// No wrap-around between the a and h files
+	CHECK(p.set_fen("4k3/p7/6p1/8/8/1P6/7P/4K3 w - - 0 1", &error), error);
+	CHECK(p.attackers_to(A4, occupied(p)) == bb(B3));
+	CHECK(p.attackers_to(H5, occupied(p)) == bb(G6));
+}
+
+static void test_attackers_to_knights() {
+	Position p{};
+	std::string error;
+
+	// All 8 knight squares around d4, both colors; the knight on d5 does not attack
+	CHECK(p.set_fen("k7/8/2N1n3/1n1N1N2/8/1N3n2/2n1N3/7K w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(B3, B5, C2, C6, E2, E6, F3, F5));
+	CHECK((p.attackers_to(D4, occupied(p)) & p.colors(WHITE)) == bb(B3, C6, E2, F5));
+	CHECK((p.attackers_to(D4, occupied(p)) & p.colors(BLACK)) == bb(B5, C2, E6, F3));
+
+	// No wrap-around: knights on g1 and h2 do not attack a1
+	CHECK(p.set_fen("7k/8/8/3K4/8/1N6/2n4n/6N1 w - - 0 1", &error), error);
+	CHECK(p.attackers_to(A1, occupied(p)) == bb(B3, C2));
+}
+
+static void test_attackers_to_kings() {
+	Position p{};
+	std::string error;
+
+	CHECK(p.set_fen("8/8/8/4k3/8/2K5/8/8 w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(C3, E5));
+	CHECK(p.attackers_to(B2, occupied(p)) == bb(C3));
+	CHECK(p.attackers_to(H1, occupied(p)) == 0);
+}
+
+static void test_attackers_to_sliders() {
+	Position p{};
+	std::string error;
+
+	// Rooks: the rook on d8 is blocked by the pawn on d6, the rook on f6 is not aligned
+	CHECK(p.set_fen("k2r4/8/3p1R2/8/R6r/8/8/3R3K w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(A4, H4, D1));
+
+	// Bishops: the bishop on g7 is blocked by the pawn on e5, the bishop on d6 is not aligned
+	CHECK(p.set_fen("7k/b5b1/3b4/4P3/8/8/8/B5BK w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(A1, A7, G1));
+
+	// Queens: on a file and a diagonal; the queen on e6 is not aligned, the queen on a4 is blocked
+	CHECK(p.set_fen("k7/3Q2q1/4q3/8/Qn6/8/8/7K w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, occupied(p)) == bb(D7, G7));
+}
+
+static void test_attackers_to_occupancy() {
+	// Sliders use the given occupancy, not the pieces on the board.
+	Position p{};
+	std::string error;
+	CHECK(p.set_fen("k2r4/8/3p1R2/8/R6r/8/8/3R3K w - - 0 1", &error), error);
+
+	// Removing the blocker on d6 reveals the rook on d8
+	CHECK(p.attackers_to(D4, occupied(p) ^ sq_bb(D6)) == bb(A4, H4, D1, D8));
+	// An extra blocker on b4 hides the rook on a4
+	CHECK(p.attackers_to(D4, occupied(p) | sq_bb(B4)) == bb(H4, D1));
+	// Empty occupancy: every aligned slider attacks
+	CHECK(p.attackers_to(D4, 0) == bb(A4, H4, D1, D8));
+
+	// Non-sliders ignore the occupancy
+	CHECK(p.set_fen("k7/8/2N1n3/1n1N1N2/8/1N3n2/2n1N3/7K w - - 0 1", &error), error);
+	CHECK(p.attackers_to(D4, 0) == bb(B3, B5, C2, C6, E2, E6, F3, F5));
+}
+
+static void test_attackers_to_startpos() {
+	Position p{};
+	std::string error;
+	CHECK(p.set_fen(START_FEN, &error), error);
+
+	CHECK(p.attackers_to(F3, occupied(p)) == bb(E2, G2, G1));
+	CHECK(p.attackers_to(C6, occupied(p)) == bb(B7, D7, B8));
+	CHECK(p.attackers_to(E4, occupied(p)) == 0);
+	// An occupied square: its defenders are attackers too
+	CHECK(p.attackers_to(D2, occupied(p)) == bb(B1, C1, D1, E1));
+}
+
+static void test_attackers_to() {
+	test_attackers_to_pawns();
+	test_attackers_to_knights();
+	test_attackers_to_kings();
+	test_attackers_to_sliders();
+	test_attackers_to_occupancy();
+	test_attackers_to_startpos();
+}
+
 void test_position() {
 	test_constructors();
 	test_put();
 	test_remove();
 	test_move();
 	test_fen();
+	test_attackers_to();
 }
