@@ -293,23 +293,23 @@ std::string Position::fen() const {
 }
 
 void Position::display() const {
-	std::cout << "    ┌─────────────────┐\n";
+	printf("    ┌─────────────────┐\n");
 	for (int rank = 7; rank >= 0; --rank) {
-		std::cout << "  " << (rank + 1) << " │ ";
+		printf("  %d │ ", (rank + 1));
 		for (int file = 0; file < 8; ++file) {
 			int square = rank * 8 + file;
 			int piece = board_[square];
 			int color = piece_color(piece);
 			int type = piece_type(piece);
 			char c = (piece == EMPTY) ? '.' : PIECE_CHARS[color * 6 + type];
-			std::cout << c << ' ';
+			printf("%c ", c);
 		}
-		std::cout << "│\n";
+		printf("│\n");
 	}
-	std::cout << "    └─────────────────┘\n";
-	std::cout << "      A B C D E F G H\n\n";
+	printf("    └─────────────────┘\n");
+	printf("      A B C D E F G H\n\n");
 
-	std::cout << "FEN: " << fen() << '\n';
+	printf("FEN: %s\n", fen().c_str());
 }
 
 bool Position::is_consistent() const {
