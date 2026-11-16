@@ -78,9 +78,223 @@ static void test_move() {
 	CHECK(p.piece_on(D7) == make_piece(WHITE, BISHOP));
 }
 
+static constexpr const char* START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+static void test_fen_startpos() {
+	Position p{};
+	CHECK(p.set_fen(START_FEN));
+	CHECK(p.is_consistent());
+	CHECK(p.fen() == START_FEN);
+	CHECK(p.side_to_move() == WHITE);
+	CHECK(p.ep_square() == NO_SQUARE);
+
+	CHECK(p.pieces(WHITE, PAWN) == 0x000000000000FF00ULL);
+	CHECK(p.pieces(BLACK, PAWN) == 0x00FF000000000000ULL);
+	CHECK(p.pieces(WHITE, KNIGHT) == (sq_bb(B1) | sq_bb(G1)));
+	CHECK(p.pieces(BLACK, KNIGHT) == (sq_bb(B8) | sq_bb(G8)));
+	CHECK(p.pieces(WHITE, BISHOP) == (sq_bb(C1) | sq_bb(F1)));
+	CHECK(p.pieces(BLACK, BISHOP) == (sq_bb(C8) | sq_bb(F8)));
+	CHECK(p.pieces(WHITE, ROOK) == (sq_bb(A1) | sq_bb(H1)));
+	CHECK(p.pieces(BLACK, ROOK) == (sq_bb(A8) | sq_bb(H8)));
+	CHECK(p.pieces(WHITE, QUEEN) == sq_bb(D1));
+	CHECK(p.pieces(BLACK, QUEEN) == sq_bb(D8));
+	CHECK(p.pieces(WHITE, KING) == sq_bb(E1));
+	CHECK(p.pieces(BLACK, KING) == sq_bb(E8));
+	CHECK(p.colors(WHITE) == 0x000000000000FFFFULL);
+	CHECK(p.colors(BLACK) == 0xFFFF000000000000ULL);
+
+	CHECK(p.piece_on(A1) == make_piece(WHITE, ROOK));
+	CHECK(p.piece_on(E1) == make_piece(WHITE, KING));
+	CHECK(p.piece_on(D8) == make_piece(BLACK, QUEEN));
+	CHECK(p.piece_on(H8) == make_piece(BLACK, ROOK));
+	for (int sq = A3; sq <= H6; ++sq)
+		CHECK(p.piece_on(sq) == EMPTY);
+}
+
+static void test_fen_roundtrip() {
+	const char* fens[] = {
+	    START_FEN,
+	    "rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+	    "rnbqkbnr/pp1ppppp/8/2pP4/4P3/8/PPP2PPP/RNBQKBNR w KQkq c6 0 2",
+	    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+	    "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+	    "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+	    "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+	    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+	    "4k3/8/8/8/8/8/8/4K3 b - - 99 150",
+	    "7k/8/8/8/8/8/8/K7 w K - 0 1",
+	    "7k/8/8/8/8/8/8/K7 w Q - 0 1",
+	    "7k/8/8/8/8/8/8/K7 w k - 0 1",
+	    "7k/8/8/8/8/8/8/K7 w q - 0 1",
+	    "7k/8/8/8/8/8/8/K7 w Kq - 0 1",
+	    "7k/8/8/8/8/8/8/K7 w - - 255 65535",
+	};
+	for (const char* fen : fens) {
+		Position p{};
+		std::string error;
+		CHECK(p.set_fen(fen, &error), std::string(fen) + " -> " + error);
+		CHECK(p.is_consistent(), fen);
+		CHECK(p.fen() == fen, std::string(fen) + " -> " + p.fen());
+	}
+}
+
+static void test_fen_fields() {
+	Position p{};
+	std::string error;
+
+	CHECK(p.set_fen("4k3/8/8/8/8/8/8/4K3 b - - 0 1", &error), error);
+	CHECK(p.side_to_move() == BLACK);
+
+	// En passant square is cleared when no pawn can capture
+	CHECK(p.set_fen("4k3/8/8/8/4P3/8/8/4K3 b - e3 0 1", &error), error);
+	CHECK(p.ep_square() == NO_SQUARE);
+	CHECK(p.set_fen("4k3/8/8/3p4/8/8/8/4K3 w - d6 0 1", &error), error);
+	CHECK(p.ep_square() == NO_SQUARE);
+	CHECK(p.set_fen("4k3/8/8/8/P7/8/8/4K3 b - a3 0 1", &error), error);
+	CHECK(p.ep_square() == NO_SQUARE);
+	CHECK(p.set_fen("4k3/8/8/7p/8/8/8/4K3 w - h6 0 1", &error), error);
+	CHECK(p.ep_square() == NO_SQUARE);
+
+	// En passant square is set when a pawn can capture
+	CHECK(p.set_fen("4k3/8/8/8/3pPp2/8/8/4K3 b - e3 0 1", &error), error);
+	CHECK(p.ep_square() == E3);
+	CHECK(p.set_fen("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1", &error), error);
+	CHECK(p.ep_square() == D6);
+	CHECK(p.set_fen("4k3/8/8/8/Pp6/8/8/4K3 b - a3 0 1", &error), error);
+	CHECK(p.ep_square() == A3);
+	CHECK(p.set_fen("4k3/8/8/6Pp/8/8/8/4K3 w - h6 0 1", &error), error);
+	CHECK(p.ep_square() == H6);
+
+	// Pieces on edge squares
+	CHECK(p.set_fen("qk5r/8/8/8/8/8/3K4/B6N w - - 0 1", &error), error);
+	CHECK(p.piece_on(A8) == make_piece(BLACK, QUEEN));
+	CHECK(p.piece_on(H8) == make_piece(BLACK, ROOK));
+	CHECK(p.piece_on(A1) == make_piece(WHITE, BISHOP));
+	CHECK(p.piece_on(H1) == make_piece(WHITE, KNIGHT));
+	CHECK(p.colors(WHITE) == bb(A1, H1, D2));
+	CHECK(p.colors(BLACK) == bb(A8, H8, B8));
+}
+
+static void test_fen_move_counters() {
+	Position p{};
+	std::string error;
+
+	// Counters are optional and default to "0 1"
+	CHECK(p.set_fen("4k3/8/8/8/8/8/8/4K3 w - -", &error), error);
+	CHECK(p.fen() == "4k3/8/8/8/8/8/8/4K3 w - - 0 1");
+
+	// Only the halfmove clock
+	CHECK(p.set_fen("4k3/8/8/8/8/8/8/4K3 w - - 12", &error), error);
+	CHECK(p.fen() == "4k3/8/8/8/8/8/8/4K3 w - - 12 1");
+
+	// Fullmove 0 is clamped to 1
+	CHECK(p.set_fen("4k3/8/8/8/8/8/8/4K3 w - - 0 0", &error), error);
+	CHECK(p.fen() == "4k3/8/8/8/8/8/8/4K3 w - - 0 1");
+
+	// Extra whitespace between fields is tolerated
+	CHECK(p.set_fen("  4k3/8/8/8/8/8/8/4K3   b  -  -  3  42  ", &error), error);
+	CHECK(p.fen() == "4k3/8/8/8/8/8/8/4K3 b - - 3 42");
+
+	// Halfmove clock out of range
+	CHECK(!p.set_fen("4k3/8/8/8/8/8/8/4K3 w - - -1 1", &error), error);
+	CHECK(!p.set_fen("4k3/8/8/8/8/8/8/4K3 w - - 256 1", &error), error);
+}
+
+// set_fen() must fail and leave the position untouched.
+static void check_invalid_fen(const char* fen, std::string* expected_error = nullptr) {
+	Position p{};
+	CHECK(p.set_fen(START_FEN, expected_error));
+	CHECK(!p.set_fen(fen, expected_error), fen);
+	CHECK(p.fen() == START_FEN);
+	CHECK(p.is_consistent());
+}
+
+static void test_fen_invalid() {
+	// Missing fields
+	check_invalid_fen("");
+	check_invalid_fen("   ");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
+
+	// Placement: wrong number of ranks
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1");
+	check_invalid_fen("/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr//pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+	// Placement: wrong number of files
+	check_invalid_fen("rnbqkbn/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/7/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/44p/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR1 w KQkq - 0 1");
+
+	// Placement: invalid characters
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNX w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/0/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR- w KQkq - 0 1");
+
+	// Side to move
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR W KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR wb KQkq - 0 1");
+
+	// Castling
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkx - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ-kq - 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1");
+	check_invalid_fen("r3k2r/8/8/8/8/8/8/R3K2R w qkQK - 0 1");
+
+	// En passant
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e33 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq i3 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e9 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq E3 0 1");
+	check_invalid_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 3e 0 1");
+
+
+	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 w - e3 0 1");   // wrong side to move
+	check_invalid_fen("4k3/8/8/8/3pP3/8/8/4K3 b - e4 0 1");   // wrong rank
+	check_invalid_fen("4k3/8/8/8/3p4/8/8/4K3 b - e3 0 1");    // no pawn on e4
+	check_invalid_fen("4k3/8/8/8/3pp3/8/8/4K3 b - e3 0 1");   // pawn of the wrong color on e4
+	check_invalid_fen("4k3/8/8/8/3pP3/4N3/8/4K3 b - e3 0 1"); // en passant square occupied
+	check_invalid_fen("4k3/8/8/8/3pP3/8/4N3/4K3 b - e3 0 1"); // origin square occupied
+	check_invalid_fen("8/8/8/8/8/8/8/8 w - - 0 1");           // no kings
+}
+
+static void test_fen_overwrite() {
+	// A successful set_fen() replaces everything from the previous position.
+	Position p{};
+	CHECK(p.set_fen("r3k2r/8/8/3pP3/8/8/8/R3K2R w KQkq d6 7 30"));
+	CHECK(p.set_fen("4k3/8/8/8/8/8/8/4K3 b - - 0 1"));
+	CHECK(p.fen() == "4k3/8/8/8/8/8/8/4K3 b - - 0 1");
+	CHECK(p.is_consistent());
+	CHECK(p.pieces(ROOK) == 0);
+	CHECK(p.pieces(PAWN) == 0);
+	CHECK(p.ep_square() == NO_SQUARE);
+	CHECK(p.piece_on(A1) == EMPTY);
+	CHECK(p.colors(WHITE) == sq_bb(E1));
+	CHECK(p.colors(BLACK) == sq_bb(E8));
+}
+
+static void test_fen() {
+	test_fen_startpos();
+	test_fen_roundtrip();
+	test_fen_fields();
+	test_fen_move_counters();
+	test_fen_invalid();
+	test_fen_overwrite();
+}
+
 void test_position() {
 	test_constructors();
 	test_put();
 	test_remove();
 	test_move();
+	test_fen();
 }

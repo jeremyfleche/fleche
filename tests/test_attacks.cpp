@@ -86,9 +86,9 @@ static void test_attacks_rook() {
 		do {
 			Bitboard expected = slow_rook_attacks(sq, occ);
 			Bitboard actual = rook_attacks(sq, occ);
-			CHECK(expected == actual);
+			CHECK(expected == actual, "square " + std::to_string(sq));
 			Bitboard noisy_occ = occ | (random_bits(i % 3) & ~m.mask);
-			CHECK(slow_rook_attacks(sq, noisy_occ) == rook_attacks(sq, noisy_occ));
+			CHECK(slow_rook_attacks(sq, noisy_occ) == rook_attacks(sq, noisy_occ), "square " + std::to_string(sq));
 			occ = (occ - m.mask) & m.mask; // generate next subset of mask
 			++i;
 		} while (occ != 0);
@@ -103,9 +103,9 @@ static void test_attacks_bishop() {
 		do {
 			Bitboard expected = slow_bishop_attacks(sq, occ);
 			Bitboard actual = bishop_attacks(sq, occ);
-			CHECK(expected == actual);
+			CHECK(expected == actual, "square " + std::to_string(sq));
 			Bitboard noisy_occ = occ | (random_bits(i % 3) & ~m.mask);
-			CHECK(slow_bishop_attacks(sq, noisy_occ) == bishop_attacks(sq, noisy_occ));
+			CHECK(slow_bishop_attacks(sq, noisy_occ) == bishop_attacks(sq, noisy_occ), "square " + std::to_string(sq));
 			occ = (occ - m.mask) & m.mask; // generate next subset of mask
 			++i;
 		} while (occ != 0);
@@ -123,7 +123,7 @@ static void test_attacks_queen() {
 			Bitboard occ = random_bits(i % 3);
 			Bitboard expected = rook_attacks(sq, occ) | bishop_attacks(sq, occ);
 			Bitboard actual = queen_attacks(sq, occ);
-			CHECK(expected == actual);
+			CHECK(expected == actual, "square " + std::to_string(sq));
 		}
 	}
 }

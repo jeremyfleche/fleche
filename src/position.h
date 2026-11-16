@@ -16,7 +16,7 @@ class Position {
 	Color side_to_move() const { return side_to_move_; }
 	Square ep_square() const { return ep_square_; }
 	uint64_t hash() const { return hash_; }
-	bool set_fen(const std::string& fen);
+	bool set_fen(const std::string& fen, std::string* error = nullptr);
 	std::string fen() const;
 	bool is_consistent() const;
 	void display() const;
