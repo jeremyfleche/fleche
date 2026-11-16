@@ -9,10 +9,10 @@ class Position {
   public:
 	Position() { std::memset(board_, EMPTY, sizeof(board_)); }
 
-	Bitboard pieces(int type) const { return pieces_[type]; }
-	Bitboard pieces(int color, int type) const { return pieces_[type] & colors_[color]; }
-	Bitboard colors(int color) const { return colors_[color]; }
-	int piece_on(int sq) const { return board_[sq]; }
+	Bitboard pieces(PieceType type) const { return pieces_[type]; }
+	Bitboard pieces(Color color, PieceType type) const { return pieces_[type] & colors_[color]; }
+	Bitboard colors(Color color) const { return colors_[color]; }
+	int piece_on(Square sq) const { return board_[sq]; }
 	Color side_to_move() const { return side_to_move_; }
 	Square ep_square() const { return ep_square_; }
 	uint64_t hash() const { return hash_; }

@@ -21,7 +21,7 @@ inline void display_bitboard(Bitboard bb, const char* label = nullptr) {
 
 	std::printf("  count : %d\n", __builtin_popcountll(bb));
 
-	std::printf("  cases : ");
+	std::printf("  squares : ");
 	for (Bitboard b = bb; b; b &= b - 1) {
 		int sq = __builtin_ctzll(b);
 		std::printf("%c%d ", 'A' + (sq & 7), (sq >> 3) + 1);

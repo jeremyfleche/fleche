@@ -24,7 +24,7 @@ inline void test_fail(const char* file, int line, const char* cond, const std::s
 		              msg.empty() ? "" : " | ", msg.c_str());
 }
 
-#define CHECK(cond, ...)                                                                                                    \
+#define CHECK(cond, ...)                                                                                               \
 	do {                                                                                                               \
 		++test_checks;                                                                                                 \
 		if (!(cond))                                                                                                   \

@@ -1,7 +1,7 @@
 #include "position.h"
 #include "test.h"
 
-void test_constructors() {
+static void test_constructors() {
 	Position p{};
 	for (int type = PAWN; type <= KING; ++type)
 		CHECK(p.pieces(type) == 0);

@@ -153,8 +153,8 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 			castling_index = i;
 			new_position.castling_ |= 1 << i;
 
-			int king_square = (i < 2) ? E1 : E8;
-			int rook_square = (i == 0) ? H1 : (i == 1) ? A1 : (i == 2) ? H8 : A8;
+			Square king_square = (i < 2) ? E1 : E8;
+			Square rook_square = (i == 0) ? H1 : (i == 1) ? A1 : (i == 2) ? H8 : A8;
 
 			int king_piece = new_position.piece_on(king_square);
 			int rook_piece = new_position.piece_on(rook_square);
@@ -175,24 +175,24 @@ bool Position::set_fen(const std::string& fen, std::string* error) {
 				*error = "Invalid en passant square: " + en_passant;
 			return false;
 		}
-		char line = en_passant[1];
-		char column = en_passant[0];
-		Square ep_square = Square((line - '1') * 8 + (column - 'a'));
+		char rank = en_passant[1];
+		char file = en_passant[0];
+		Square ep_square = Square((rank - '1') * 8 + (file - 'a'));
 
 		// Check that the en passant square is valid
-		if (column < 'a' || column > 'h') {
+		if (file < 'a' || file > 'h') {
 			if (error)
 				*error = "Invalid en passant square: " + en_passant;
 			return false;
 		}
 		// Check that the en passant square is on the correct rank and that there is a pawn of the correct color on the
 		// correct square
-		if (new_position.side_to_move_ == WHITE && line != '6') {
+		if (new_position.side_to_move_ == WHITE && rank != '6') {
 			if (error)
 				*error = "En passant square must be on rank 6 for white to move: " + en_passant;
 			return false;
 		}
-		if (new_position.side_to_move_ == BLACK && line != '3') {
+		if (new_position.side_to_move_ == BLACK && rank != '3') {
 			if (error)
 				*error = "En passant square must be on rank 3 for black to move: " + en_passant;
 			return false;
@@ -242,7 +242,7 @@ std::string Position::fen() const {
 	for (int line = 7; line >= 0; --line) {
 		int empty_count = 0;
 		for (int column = 0; column < 8; ++column) {
-			int square = 8 * line + column;
+			Square square = static_cast<Square>(8 * line + column);
 			int piece = piece_on(square);
 
 			if (piece == EMPTY) {
