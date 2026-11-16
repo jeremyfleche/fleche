@@ -4,7 +4,7 @@
 static void test_constructors() {
 	Position p{};
 	for (int type = PAWN; type <= KING; ++type)
-		CHECK(p.pieces(type) == 0);
+		CHECK(p.pieces(static_cast<PieceType>(type)) == 0);
 	CHECK(p.side_to_move() == WHITE);
 	CHECK(p.ep_square() == NO_SQUARE);
 	CHECK(p.colors(WHITE) == 0);
@@ -108,7 +108,7 @@ static void test_fen_startpos() {
 	CHECK(p.piece_on(D8) == make_piece(BLACK, QUEEN));
 	CHECK(p.piece_on(H8) == make_piece(BLACK, ROOK));
 	for (int sq = A3; sq <= H6; ++sq)
-		CHECK(p.piece_on(sq) == EMPTY);
+		CHECK(p.piece_on(static_cast<Square>(sq)) == EMPTY);
 }
 
 static void test_fen_roundtrip() {
