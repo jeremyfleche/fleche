@@ -390,3 +390,24 @@ Bitboard Position::attackers_to(Square square, Bitboard occ) const {
 
 	return attackers;
 }
+
+bool Position::is_square_attacked(Square sq, Color by) const {
+	const Bitboard occ = occupied();
+
+	if (pawn_attacks(Color(by ^ 1), sq) & pieces(by, PAWN))
+		return true;
+	if (knight_attacks(sq) & pieces(by, KNIGHT))
+		return true;
+	if (king_attacks(sq) & pieces(by, KING))
+		return true;
+
+	const Bitboard bishops = pieces(by, BISHOP) | pieces(by, QUEEN);
+	if ((bishops & BISHOP_RAYS[sq]) && (bishops & bishop_attacks(sq, occ)))
+		return true;
+
+	const Bitboard rooks = pieces(by, ROOK) | pieces(by, QUEEN);
+	if ((rooks & ROOK_RAYS[sq]) && (rooks & rook_attacks(sq, occ)))
+		return true;
+
+	return false;
+}

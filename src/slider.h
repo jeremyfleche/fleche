@@ -52,3 +52,13 @@ constexpr std::array<Bitboard, 64> init_masks(const int (&directions)[4][2]) {
 
 inline constexpr std::array<Bitboard, 64> ROOK_MASK = init_masks(ROOK_DIRECTIONS);
 inline constexpr std::array<Bitboard, 64> BISHOP_MASK = init_masks(BISHOP_DIRECTIONS);
+
+constexpr std::array<Bitboard, 64> init_rays(Bitboard (*attacks_func)(int, Bitboard)) {
+	std::array<Bitboard, 64> res{};
+	for (int sq = 0; sq < 64; ++sq)
+		res[sq] = attacks_func(sq, 0);
+	return res;
+}
+
+inline constexpr std::array<Bitboard, 64> BISHOP_RAYS = init_rays(slow_bishop_attacks);
+inline constexpr std::array<Bitboard, 64> ROOK_RAYS = init_rays(slow_rook_attacks);

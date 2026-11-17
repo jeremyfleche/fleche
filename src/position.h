@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "types.h"
@@ -19,12 +20,14 @@ class Position {
 	uint8_t castling() const { return castling_; }
 	uint8_t halfmove() const { return halfmove_; }
 	uint16_t fullmove() const { return fullmove_; }
+	Bitboard occupied() const { return colors_[WHITE] | colors_[BLACK]; }
 
 	bool set_fen(const std::string& fen, std::string* error = nullptr);
 	std::string fen() const;
 	bool is_consistent() const;
 	void display() const;
 	Bitboard attackers_to(Square square, Bitboard occ) const;
+	bool is_square_attacked(Square square, Color by) const;
 
 	void put_piece(int piece, int square) {
 		assert(board_[square] == EMPTY);
