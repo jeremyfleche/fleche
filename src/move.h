@@ -1,3 +1,5 @@
+#pragma once
+
 #include "types.h"
 
 enum MoveFlag : uint8_t {
@@ -20,8 +22,8 @@ enum MoveFlag : uint8_t {
 class Move {
   public:
 	constexpr Move() = default;
-	constexpr Move(Square from, Square to, PieceType promotion = PAWN)
-	    : data_((from & 0x3F) | ((to & 0x3F) << 6) | ((promotion & 0x0F) << 12)) {}
+	constexpr Move(Square from, Square to, MoveFlag flag = QUIET)
+	    : data_((from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x0F) << 12)) {}
 
 	constexpr Square from() const { return static_cast<Square>(data_ & 0x3F); }
 	constexpr Square to() const{ return static_cast<Square>((data_ >> 6) & 0x3F); }
