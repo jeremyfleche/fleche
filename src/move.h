@@ -26,13 +26,14 @@ class Move {
 	    : data_((from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x0F) << 12)) {}
 
 	constexpr Square from() const { return static_cast<Square>(data_ & 0x3F); }
-	constexpr Square to() const{ return static_cast<Square>((data_ >> 6) & 0x3F); }
+	constexpr Square to() const { return static_cast<Square>((data_ >> 6) & 0x3F); }
 	constexpr MoveFlag flags() const { return static_cast<MoveFlag>((data_ >> 12) & 0xF); }
 	constexpr bool is_capture() const { return (flags() & 4) != 0; }
 	constexpr bool is_promotion() const { return (flags() & 8) != 0; }
 	constexpr PieceType promotion_type() const { return static_cast<PieceType>(KNIGHT + (flags() & 3)); }
 	
 	constexpr bool operator==(const Move&) const = default;
+
   private:
 	// (0-5) from, (6-11) to, (12-15) flags
 	uint16_t data_ = 0;
