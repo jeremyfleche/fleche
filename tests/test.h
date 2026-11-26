@@ -33,3 +33,4 @@ inline void test_fail(const char* file, int line, const char* cond, const std::s
 
 void test_position();
 void test_attacks();
+void test_movegen();

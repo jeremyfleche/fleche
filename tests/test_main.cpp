@@ -30,6 +30,7 @@ int main() {
 	init_attacks();
 	run_suite("test_position", test_position);
 	run_suite("test_attacks", test_attacks);
+	run_suite("test_movegen", test_movegen);
 
 	std::printf("\n");
 	if (test_failures == 0) {
