@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 using Bitboard = uint64_t;
 
@@ -29,3 +30,9 @@ constexpr uint8_t EMPTY = 0xFF;
 constexpr uint8_t make_piece(Color color, PieceType type) { return (color << 3) | type; }
 constexpr int piece_color(int piece) { return piece >> 3; }
 constexpr int piece_type(int piece) { return piece & 7; }
+
+inline Square pop_lsb(Bitboard& b) {
+	const Square sq = static_cast<Square>(__builtin_ctzll(b));
+	b &= b - 1;
+	return sq;
+}
