@@ -1,5 +1,6 @@
 #include "movegen.h"
 #include "attacks.h"
+#include "types.h"
 
 template <int D> constexpr Bitboard shift(Bitboard b) { return D > 0 ? b << D : b >> -D; }
 
@@ -119,7 +120,7 @@ template <PieceType Pt> static void generate_piece_moves(const Position& pos, Mo
 	while (pieces) {
 		const Square from = pop_lsb(pieces);
 		Bitboard attacks;
-		if constexpr(Pt == KNIGHT)
+		if constexpr (Pt == KNIGHT)
 			attacks = knight_attacks(from);
 		else if constexpr (Pt == BISHOP)
 			attacks = bishop_attacks(from, occ);
@@ -129,7 +130,7 @@ template <PieceType Pt> static void generate_piece_moves(const Position& pos, Mo
 			attacks = queen_attacks(from, occ);
 		else
 			attacks = king_attacks(from);
-		
+
 		Bitboard empty_squares = attacks & empty;
 		while (empty_squares)
 			list.add(Move(from, pop_lsb(empty_squares)));
@@ -140,6 +141,26 @@ template <PieceType Pt> static void generate_piece_moves(const Position& pos, Mo
 	}
 }
 
+template <Color Us> static void generate_castling_moves(const Position& pos, MoveList& list) {
+	constexpr int OO = (Us == WHITE) ? WHITE_OO : BLACK_OO;
+	constexpr int OOO = (Us == WHITE) ? WHITE_OOO : BLACK_OOO;
+	constexpr Bitboard OO_EMPTY = (Us == WHITE) ? bb(F1, G1) : bb(F8, G8);
+	constexpr Bitboard OOO_EMPTY = (Us == WHITE) ? bb(B1, C1, D1) : bb(B8, C8, D8);
+	constexpr Square from = (Us == WHITE) ? E1 : E8;
+	constexpr Square OO_to = (Us == WHITE) ? G1 : G8;
+	constexpr Square OOO_to = (Us == WHITE) ? C1 : C8;
+	constexpr Color Them = Color(Us ^ 1);
+	constexpr Square OO_through = (Us == WHITE) ? F1 : F8;
+	constexpr Square OOO_through = (Us == WHITE) ? D1 : D8;
+
+	if ((pos.castling() & OO) && !(pos.occupied() & OO_EMPTY) && !pos.is_square_attacked(from, Them) &&
+	    !pos.is_square_attacked(OO_through, Them) && !pos.is_square_attacked(OO_to, Them))
+		list.add(Move(from, OO_to, KING_CASTLE));
+	if ((pos.castling() & OOO) && !(pos.occupied() & OOO_EMPTY) && !pos.is_square_attacked(from, Them) &&
+	    !pos.is_square_attacked(OOO_through, Them) && !pos.is_square_attacked(OOO_to, Them))
+		list.add(Move(from, OOO_to, QUEEN_CASTLE));
+}
+
 template <Color Us> void generate_all(const Position& pos, MoveList& list) {
 	generate_pawn_moves<Us>(pos, list);
 	generate_piece_moves<KNIGHT>(pos, list, Us);
@@ -147,6 +168,7 @@ template <Color Us> void generate_all(const Position& pos, MoveList& list) {
 	generate_piece_moves<ROOK>(pos, list, Us);
 	generate_piece_moves<QUEEN>(pos, list, Us);
 	generate_piece_moves<KING>(pos, list, Us);
+	generate_castling_moves<Us>(pos, list);
 }
 
 void generate_moves(const Position& pos, MoveList& list) {
