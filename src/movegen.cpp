@@ -109,27 +109,44 @@ template <Color Us> static void generate_pawn_moves(const Position& pos, MoveLis
 	}
 }
 
-template <PieceType Pt> static void generate_piece_moves(Position& pos, MoveList& list) {
-	// Bitboard attacks;
-	// if constexpr (Pt == KNIGHT)
-	// 	attacks = knight_attacks(from);
-	// else if constexpr (Pt == BISHOP)
-	// 	attacks = bishop_attacks(from, occ);
-	// else if constexpr (Pt == ROOK)
-	// 	attacks = rook_attacks(from, occ);
-	// else if constexpr (Pt == QUEEN)
-	// 	attacks = queen_attacks(from, occ);
-	// else
-	// 	attacks = king_attacks(from);
+template <PieceType Pt> static void generate_piece_moves(const Position& pos, MoveList& list, Color Us) {
+	const Bitboard occ = pos.occupied();
+	const Bitboard empty = ~occ;
+	const Bitboard enemies = pos.colors(Color(Us ^ 1));
+
+	Bitboard pieces = pos.pieces(Us, Pt);
+
+	while (pieces) {
+		const Square from = pop_lsb(pieces);
+		Bitboard attacks;
+		if constexpr(Pt == KNIGHT)
+			attacks = knight_attacks(from);
+		else if constexpr (Pt == BISHOP)
+			attacks = bishop_attacks(from, occ);
+		else if constexpr (Pt == ROOK)
+			attacks = rook_attacks(from, occ);
+		else if constexpr (Pt == QUEEN)
+			attacks = queen_attacks(from, occ);
+		else
+			attacks = king_attacks(from);
+		
+		Bitboard empty_squares = attacks & empty;
+		while (empty_squares)
+			list.add(Move(from, pop_lsb(empty_squares)));
+
+		Bitboard enemy = attacks & enemies;
+		while (enemy)
+			list.add(Move(from, pop_lsb(enemy), CAPTURE));
+	}
 }
 
 template <Color Us> void generate_all(const Position& pos, MoveList& list) {
 	generate_pawn_moves<Us>(pos, list);
-	// generate_piece_moves<KNIGHT>(pos, list, Us);
-	// generate_piece_moves<BISHOP>(pos, list, Us);
-	// generate_piece_moves<ROOK>(pos, list, Us);
-	// generate_piece_moves<QUEEN>(pos, list, Us);
-	// generate_piece_moves<KING>(pos, list, Us);
+	generate_piece_moves<KNIGHT>(pos, list, Us);
+	generate_piece_moves<BISHOP>(pos, list, Us);
+	generate_piece_moves<ROOK>(pos, list, Us);
+	generate_piece_moves<QUEEN>(pos, list, Us);
+	generate_piece_moves<KING>(pos, list, Us);
 }
 
 void generate_moves(const Position& pos, MoveList& list) {
