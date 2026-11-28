@@ -70,3 +70,10 @@ class Position {
 	uint16_t fullmove_ = 1;        // move number
 	uint64_t hash_ = 0;            // zobrist hash
 };
+
+struct StateInfo {
+	uint8_t castling;
+	Square ep_square;
+	uint8_t halfmove;
+	uint8_t captured = EMPTY;
+};
